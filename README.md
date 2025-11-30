@@ -532,7 +532,7 @@ python tests/test_basic.py
 ## 👥 作者
 
 **CS 5481 - Data Engineering**  
-City University of Hong Kong  
+City University of Hong Kong（DG）  
 2025 Semester A
 
 ## 🙏 致谢
@@ -546,7 +546,7 @@ City University of Hong Kong
 如有问题或建议，请通过以下方式联系：
 
 - 提交 Issue：[GitHub Issues](https://github.com/YourUsername/book-recommendation-system/issues)
-- Email: your.email@example.com
+- Email: 72515790@cityu-dg.edu.cn
 
 ## 🔗 相关资源
 
