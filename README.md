@@ -537,15 +537,16 @@ City University of Hong Kong（DG）
 
 ## 🙏 致谢
 
-- 数据集来源：[Book-Crossing Dataset](http://www2.informatik.uni-freiburg.de/~cziegler/BX/)
-- 参考框架：LightFM, LightGBM, Scikit-learn
-- UI 框架：Bootstrap 5
+- **项目基础**：本项目基于 [YuFish131416/CS5481-book_recommendation_system](https://github.com/YuFish131416/CS5481-book_recommendation_system) 进行开发和改进，感谢原作者的贡献
+- **数据集来源**：[Book-Crossing Dataset](http://www2.informatik.uni-freiburg.de/~cziegler/BX/)
+- **参考框架**：LightFM, LightGBM, Scikit-learn
+- **UI 框架**：Bootstrap 5
 
 ## 📧 联系方式
 
 如有问题或建议，请通过以下方式联系：
 
-- 提交 Issue：[GitHub Issues](https://github.com/YourUsername/book-recommendation-system/issues)
+- 提交 Issue：[GitHub Issues](https://github.com/zhaohc1997/CS5481-book_recommendation_system/issues)
 - Email: 72515790@cityu-dg.edu.cn
 
 ## 🔗 相关资源
