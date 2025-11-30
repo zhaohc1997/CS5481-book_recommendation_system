@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}模型对比 - 智能图书推荐系统{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="fas fa-chart-bar me-2"></i>
+            模型性能对比
+        </h1>
+        <p class="lead text-muted">
+            同时对比多个推荐模型的效果，直观感受不同算法的差异
+        </p>
+    </div>
+    
+    <!-- 搜索框 -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">
+                        <i class="fas fa-search me-2"></i>输入图书标题
+                    </h5>
+                    
+                    <!-- 热门图书快捷选择 -->
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-2">💡 快捷选择热门图书:</small>
+                        <div class="d-flex flex-wrap gap-2" id="popularBooksContainer">
+                            {% for book in popular_books %}
+                            <button class="btn btn-sm btn-outline-primary popular-book-btn" 
+                                    type="button"
+                                    data-book-title="{{ book }}">
+                                {{ book[:50] }}{% if book|length > 50 %}...{% endif %}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="input-group input-group-lg mb-3">
+                        <input type="text" class="form-control search-box" 
+                               id="compareQuery" 
+                               placeholder="输入完整或部分图书标题..."
+                               onkeypress="if(event.key==='Enter') compareModels()">
+                        <button class="btn btn-primary px-4" type="button" onclick="compareModels()">
+                            <i class="fas fa-play me-2"></i>开始对比
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        系统将使用 {{ models|length }} 个模型同时生成推荐结果。支持模糊匹配！
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载指示器 -->
+    <div id="loadingSection" style="display: none;" class="text-center py-5">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">正在生成推荐...</p>
+    </div>
+    
+    <!-- 对比结果 -->
+    <div id="comparisonResults"></div>
+</div>
+
+<script>
+// 页面加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 为所有快捷按钮绑定点击事件
+    document.querySelectorAll('.popular-book-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const bookTitle = this.getAttribute('data-book-title');
+            selectBook(bookTitle);
+        });
+    });
+});
+
+function selectBook(title) {
+    console.log('选择图书:', title);
+    document.getElementById('compareQuery').value = title;
+    compareModels();
+}
+
+function compareModels() {
+    const query = document.getElementById('compareQuery').value.trim();
+    
+    console.log('开始对比，查询:', query);
+    
+    if (!query) {
+        alert('请输入图书标题');
+        return;
+    }
+    
+    const loadingSection = document.getElementById('loadingSection');
+    const resultsSection = document.getElementById('comparisonResults');
+    
+    loadingSection.style.display = 'block';
+    resultsSection.innerHTML = '';
+    
+    fetch('/api/compare', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            book_title: query,
+            n: 5
+        })
+    })
+    .then(response => {
+        console.log('响应状态:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('响应数据:', data);
+        loadingSection.style.display = 'none';
+        
+        if (data.success) {
+            displayComparison(data);
+        } else {
+            let errorHtml = `
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>未找到图书</h5>
+                    <p class="mb-2">未找到 "${query}"，您可以尝试:</p>
+            `;
+            
+            if (data.suggestions && data.suggestions.length > 0) {
+                errorHtml += '<div class="d-flex flex-wrap gap-2 mt-3">';
+                data.suggestions.forEach(title => {
+                    errorHtml += `
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="selectBook(\`${title.replace(/`/g, '\\`')}\`)">
+                            ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}
+                        </button>
+                    `;
+                });
+                errorHtml += '</div>';
+            }
+            
+            errorHtml += '</div>';
+            resultsSection.innerHTML = errorHtml;
+        }
+    })
+    .catch(error => {
+        console.error('请求错误:', error);
+        loadingSection.style.display = 'none';
+        resultsSection.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle me-2"></i>
+                请求失败: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function displayComparison(data) {
+    const resultsSection = document.getElementById('comparisonResults');
+    
+    console.log('显示对比结果:', data);
+    
+    let html = `
+        <div class="mb-4">
+            <h3 class="fw-bold">
+                <i class="fas fa-book me-2"></i>
+                查询图书: <span class="text-primary">${escapeHtml(data.actual_title)}</span>
+            </h3>
+    `;
+    
+    if (!data.is_exact_match && data.query !== data.actual_title) {
+        html += `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                您输入的 "<strong>${escapeHtml(data.query)}</strong>" 已自动匹配到 "<strong>${escapeHtml(data.actual_title)}</strong>"
+            </div>
+        `;
+    }
+    
+    html += `</div>`;
+    
+    const modelNames = Object.keys(data.results);
+    const modelColors = {
+        'ItemBasedCF': '#6366f1',
+        'MatrixFactorization': '#f59e0b',
+        'LightFM': '#8b5cf6',
+        'TwoStage': '#ec4899'
+    };
+    
+    modelNames.forEach((modelName) => {
+        const modelResult = data.results[modelName];
+        const color = modelColors[modelName] || '#64748b';
+        
+        html += `
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header" style="background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); color: white;">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        ${modelName}
+                        ${modelName === 'TwoStage' ? '<span class="badge bg-warning text-dark ms-2">最佳</span>' : ''}
+                    </h5>
+                </div>
+                <div class="card-body">
+        `;
+        
+        if (modelResult.success && modelResult.recommendations && modelResult.recommendations.length > 0) {
+            html += `<div class="row">`;
+            
+            modelResult.recommendations.forEach((rec, i) => {
+                const rankNumber = i + 1;  // ⭐ 修复：先计算排名数字
+                html += `
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+                        <div class="card h-100">
+                            <div class="position-relative">
+                                <img src="${rec.image_url}" class="card-img-top" alt="${escapeHtml(rec.title)}"
+                                     onerror="this.src='/static/images/book-placeholder.png'"
+                                     style="height: 200px; object-fit: cover;">
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <span class="badge bg-success">#${rankNumber}</span>
+                                </div>
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge badge-score">${rec.score.toFixed(3)}</span>
+                                </div>
+                            </div>
+                            <div class="card-body p-2">
+                                <h6 class="card-title small" style="height: 2.5rem; overflow: hidden; line-height: 1.2;">
+                                    ${escapeHtml(rec.title.substring(0, 40))}${rec.title.length > 40 ? '...' : ''}
+                                </h6>
+                                <p class="text-muted small mb-1" style="height: 1.5rem; overflow: hidden;">
+                                    ${escapeHtml(rec.author.substring(0, 25))}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-warning">
+                                        <i class="fas fa-star"></i> ${rec.avg_rating.toFixed(1)}
+                                    </small>
+                                    <small class="text-muted">${rec.rating_count}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+        } else {
+            html += `
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                    <p>该模型未返回推荐结果</p>
+                    ${modelResult.error ? `<small class="text-danger">错误: ${escapeHtml(modelResult.error)}</small>` : ''}
+                    <small class="d-block mt-2 text-muted">
+                        可能原因：该图书不在此模型的训练数据中
+                    </small>
+                </div>
+            `;
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    // 添加说明
+    html += `
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    模型说明
+                </h5>
+                <ul class="mb-0">
+                    <li><strong>ItemBasedCF</strong>: 基于物品的协同过滤，推荐用户行为相似的书籍（依赖评分矩阵）</li>
+                    <li><strong>MatrixFactorization</strong>: 矩阵分解算法，通过隐语义模型发现深层关联（依赖评分矩阵）</li>
+                    <li><strong>LightFM</strong>: 混合推荐模型，结合协同过滤和内容特征（鲁棒性更好）</li>
+                    <li><strong>TwoStage</strong>: 两阶段架构（召回+LightGBM排序），性能最优 ⭐</li>
+                </ul>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>注意：</strong>如果某个模型无推荐结果，可能是因为该图书不在该模型的训练数据矩阵中。
+                    LightFM 和 TwoStage 通常覆盖率更高。
+                </div>
+            </div>
+        </div>
+    `;
+    
+    resultsSection.innerHTML = html;
+}
+
+// HTML 转义函数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

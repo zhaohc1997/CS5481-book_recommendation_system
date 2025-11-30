@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-4 fw-bold mb-3">
+                    发现你的下一本好书
+                </h1>
+                <p class="lead mb-4">
+                    基于先进机器学习算法的智能推荐系统，为你推荐最适合的图书
+                </p>
+                <div class="d-flex gap-3">
+                    <a href="/search" class="btn btn-light btn-lg px-4">
+                        <i class="fas fa-search me-2"></i>开始搜索
+                    </a>
+                    <a href="/compare" class="btn btn-outline-light btn-lg px-4">
+                        <i class="fas fa-chart-bar me-2"></i>模型对比
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 text-center">
+                <i class="fas fa-book-open" style="font-size: 12rem; opacity: 0.2;"></i>
+            </div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="row mt-5">
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ "{:,}".format(stats.total_books) }}</div>
+                    <div class="text-muted">图书</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ "{:,}".format(stats.total_ratings) }}</div>
+                    <div class="text-muted">评分</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ "{:,}".format(stats.total_users) }}</div>
+                    <div class="text-muted">用户</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.models_available }}</div>
+                    <div class="text-muted">推荐模型</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 热门图书 -->
+<div class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="fas fa-fire text-danger me-2"></i>
+            热门图书
+        </h2>
+        <a href="/search" class="btn btn-outline-primary">
+            查看更多 <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+    
+    <div class="row">
+        {% for book in popular_books %}
+        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4">
+            <div class="card book-card">
+                <img src="{{ book.image_url }}" class="card-img-top" alt="{{ book.title }}"
+                     onerror="this.src='/static/images/book-placeholder.png'">
+                <div class="card-body">
+                    <h6 class="card-title" style="height: 3rem; overflow: hidden;">
+                        {{ book.title[:40] }}{% if book.title|length > 40 %}...{% endif %}
+                    </h6>
+                    <p class="text-muted small mb-2">{{ book.author[:30] }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-warning">
+                            <i class="fas fa-star"></i> {{ "%.1f"|format(book.avg_rating) }}
+                        </small>
+                        <small class="text-muted">{{ book.rating_count }} 评分</small>
+                    </div>
+                    <a href="/book/{{ book.isbn }}" class="btn btn-sm btn-primary w-100 mt-2">
+                        查看详情
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 可用模型 -->
+<div class="container mb-5">
+    <h2 class="fw-bold mb-4">
+        <i class="fas fa-robot me-2"></i>
+        可用推荐模型
+    </h2>
+    <div class="row">
+        {% for model in models %}
+        <div class="col-md-3 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-brain fa-3x mb-3" style="color: var(--primary-color);"></i>
+                    <h5 class="card-title">{{ model }}</h5>
+                    <p class="text-muted small">
+                        {% if model == 'ItemBasedCF' %}
+                        基于物品的协同过滤
+                        {% elif model == 'MatrixFactorization' %}
+                        矩阵分解算法
+                        {% elif model == 'LightFM' %}
+                        混合推荐模型
+                        {% elif model == 'TwoStage' %}
+                        召回-排序两阶段
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

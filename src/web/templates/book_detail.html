@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - 智能图书推荐系统{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">首页</a></li>
+            <li class="breadcrumb-item"><a href="/search">搜索</a></li>
+            <li class="breadcrumb-item active">图书详情</li>
+        </ol>
+    </nav>
+    
+    <!-- 图书详情 -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <img src="{{ book.image_url }}" class="img-fluid rounded shadow" 
+                 alt="{{ book.title }}"
+                 onerror="this.src='/static/images/book-placeholder.png'"
+                 style="width: 100%;">
+        </div>
+        <div class="col-md-9">
+            <h1 class="display-5 fw-bold mb-3">{{ book.title }}</h1>
+            
+            <div class="mb-3">
+                <span class="badge bg-primary me-2">
+                    <i class="fas fa-user me-1"></i>{{ book.author }}
+                </span>
+                <span class="badge bg-secondary me-2">
+                    <i class="fas fa-calendar me-1"></i>{{ book.year }}
+                </span>
+                <span class="badge bg-info me-2">
+                    <i class="fas fa-building me-1"></i>{{ book.publisher }}
+                </span>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h2 class="text-warning mb-0">
+                                <i class="fas fa-star"></i>
+                                {{ "%.2f"|format(book.avg_rating) }}
+                            </h2>
+                            <small class="text-muted">平均评分</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h2 class="mb-0" style="color: var(--primary-color);">
+                                <i class="fas fa-users"></i>
+                                {{ book.rating_count }}
+                            </h2>
+                            <small class="text-muted">评分人数</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h2 class="mb-0" style="color: var(--secondary-color);">
+                                <i class="fas fa-book"></i>
+                            </h2>
+                            <small class="text-muted">ISBN: {{ book.isbn }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-3">
+                <button class="btn btn-primary btn-lg" onclick="getRecommendations()">
+                    <i class="fas fa-magic me-2"></i>获取推荐
+                </button>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-lg dropdown-toggle" 
+                            type="button" id="modelDropdown" data-bs-toggle="dropdown">
+                        <i class="fas fa-robot me-2"></i>选择模型
+                    </button>
+                    <ul class="dropdown-menu" id="modelList">
+                        <li><a class="dropdown-item" href="#" data-model="ItemBasedCF">ItemBasedCF</a></li>
+                        <li><a class="dropdown-item" href="#" data-model="MatrixFactorization">MatrixFactorization</a></li>
+                        <li><a class="dropdown-item" href="#" data-model="LightFM">LightFM</a></li>
+                        <li><a class="dropdown-item" href="#" data-model="TwoStage">TwoStage</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="selectedModel" class="mt-3">
+                <small class="text-muted">
+                    当前模型: <span class="model-badge" id="currentModel">{{ model_name }}</span>
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 推荐区域 -->
+    <div id="recommendationsSection">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold">
+                <i class="fas fa-magic me-2"></i>
+                相似推荐
+            </h2>
+            <div id="loadingIndicator" style="display: none;">
+                <div class="loading"></div>
+                <small class="ms-2 text-muted">加载中...</small>
+            </div>
+        </div>
+        
+        <div class="row" id="recommendationsList">
+            {% if recommendations %}
+                {% for rec in recommendations %}
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4">
+                    <div class="card book-card">
+                        <img src="{{ rec.image_url }}" class="card-img-top" alt="{{ rec.title }}"
+                             onerror="this.src='/static/images/book-placeholder.png'">
+                        <div class="card-body">
+                            <div class="badge badge-score mb-2 w-100">
+                                得分: {{ "%.3f"|format(rec.score) }}
+                            </div>
+                            <h6 class="card-title" style="height: 3rem; overflow: hidden;">
+                                {{ rec.title[:40] }}{% if rec.title|length > 40 %}...{% endif %}
+                            </h6>
+                            <p class="text-muted small mb-2">{{ rec.author[:30] }}</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-warning">
+                                    <i class="fas fa-star"></i> {{ "%.1f"|format(rec.avg_rating) }}
+                                </small>
+                                <small class="text-muted">{{ rec.rating_count }}</small>
+                            </div>
+                            <a href="/book/{{ rec.isbn }}" class="btn btn-sm btn-primary w-100">
+                                查看详情
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-robot fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">点击上方"获取推荐"按钮查看相似图书</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentModel = '{{ model_name }}';
+    
+    // 模型选择
+    document.querySelectorAll('#modelList .dropdown-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentModel = this.dataset.model;
+            document.getElementById('currentModel').textContent = currentModel;
+        });
+    });
+    
+    // 获取推荐
+    function getRecommendations() {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const recommendationsList = document.getElementById('recommendationsList');
+        
+        loadingIndicator.style.display = 'block';
+        recommendationsList.innerHTML = '<div class="col-12 text-center"><div class="loading"></div></div>';
+        
+        fetch('/recommend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                book_title: '{{ book.title }}',
+                model: currentModel,
+                n: 12
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingIndicator.style.display = 'none';
+            
+            if (data.success && data.recommendations.length > 0) {
+                let html = '';
+                data.recommendations.forEach(rec => {
+                    html += `
+                        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4">
+                            <div class="card book-card">
+                                <img src="${rec.image_url}" class="card-img-top" alt="${rec.title}"
+                                     onerror="this.src='/static/images/book-placeholder.png'">
+                                <div class="card-body">
+                                    <div class="badge badge-score mb-2 w-100">
+                                        得分: ${rec.score.toFixed(3)}
+                                    </div>
+                                    <h6 class="card-title" style="height: 3rem; overflow: hidden;">
+                                        ${rec.title.substring(0, 40)}${rec.title.length > 40 ? '...' : ''}
+                                    </h6>
+                                    <p class="text-muted small mb-2">${rec.author.substring(0, 30)}</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-warning">
+                                            <i class="fas fa-star"></i> ${rec.avg_rating.toFixed(1)}
+                                        </small>
+                                        <small class="text-muted">${rec.rating_count}</small>
+                                    </div>
+                                    <a href="/book/${rec.isbn}" class="btn btn-sm btn-primary w-100">
+                                        查看详情
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                recommendationsList.innerHTML = html;
+            } else {
+                recommendationsList.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-exclamation-circle fa-4x text-warning mb-3"></i>
+                        <p class="text-muted">暂无推荐结果</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            loadingIndicator.style.display = 'none';
+            recommendationsList.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                    <p class="text-muted">获取推荐失败: ${error.message}</p>
+                </div>
+            `;
+        });
+    }
+</script>
+{% endblock %}

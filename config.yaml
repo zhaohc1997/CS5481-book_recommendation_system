@@ -1,0 +1,51 @@
+# 数据配置
+data:
+  min_user_ratings: 5
+  min_book_ratings: 10
+  test_size: 0.2
+  random_state: 42
+
+# 模型配置
+models:
+  # 协同过滤
+  collaborative_filtering:
+    similarity_metric: 'cosine'
+    
+  # 矩阵分解
+  matrix_factorization:
+    n_factors: 50
+    learning_rate: 0.01
+    regularization: 0.02
+    n_epochs: 20
+    
+  # LightGBM
+  lightgbm:
+    num_leaves: 31
+    learning_rate: 0.05
+    n_estimators: 100
+    
+  # LightFM
+  lightfm:
+    no_components: 30
+    loss: 'warp'
+    learning_rate: 0.05
+    epochs: 10
+    
+  # 集成模型
+  ensemble:
+    equal_weight: true
+    staged_pipeline:
+      recall_weight: 0.3
+      rerank_weight: 0.7
+
+# 评估配置
+evaluation:
+  k: 5
+  n_samples: 100
+  metrics:
+    - precision
+    - recall
+    - f1
+    - ndcg
+    - coverage
+    - diversity

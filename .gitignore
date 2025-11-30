@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtual Environment
+venv/
+venv_new/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# 数据文件（太大，不提交）
+data/raw/*.csv
+data/processed/*.csv
+data/models/*.pkl
+
+# 结果文件
+results/
+*.png
+*.jpg
+*.jpeg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}搜索图书 - 智能图书推荐系统{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+            <h2 class="text-center mb-4">
+                <i class="fas fa-search me-2"></i>搜索图书
+            </h2>
+            <form action="/search" method="get">
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control search-box" 
+                           name="q" placeholder="输入图书标题..." 
+                           value="{{ query }}" autofocus>
+                    <button class="btn btn-primary px-4" type="submit">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if query %}
+    <h4 class="mb-3">
+        搜索 "{{ query }}" 的结果 (共 {{ results|length }} 本)
+    </h4>
+    {% else %}
+    <h4 class="mb-3">
+        <i class="fas fa-fire text-danger me-2"></i>热门图书
+    </h4>
+    {% endif %}
+    
+    <div class="row">
+        {% if results %}
+            {% for book in results %}
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4">
+                <div class="card book-card">
+                    <img src="{{ book.image_url }}" class="card-img-top" alt="{{ book.title }}"
+                         onerror="this.src='/static/images/book-placeholder.png'">
+                    <div class="card-body">
+                        <h6 class="card-title" style="height: 3rem; overflow: hidden;">
+                            {{ book.title[:40] }}{% if book.title|length > 40 %}...{% endif %}
+                        </h6>
+                        <p class="text-muted small mb-2">{{ book.author[:30] }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-warning">
+                                <i class="fas fa-star"></i> {{ "%.1f"|format(book.avg_rating) }}
+                            </small>
+                            <small class="text-muted">{{ book.rating_count }}</small>
+                        </div>
+                        <a href="/book/{{ book.isbn }}" class="btn btn-sm btn-primary w-100">
+                            查看详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <p class="text-muted">未找到相关图书，请尝试其他关键词</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

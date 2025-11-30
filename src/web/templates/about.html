@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}关于系统 - 智能图书推荐系统{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- 系统介绍 -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            关于系统
+        </h1>
+        <p class="lead text-muted">
+            基于机器学习算法的智能图书推荐系统
+        </p>
+    </div>
+    
+    <!-- 技术架构 -->
+    <div class="row mb-5">
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">
+                        <i class="fas fa-layer-group me-2" style="color: var(--primary-color);"></i>
+                        技术架构
+                    </h3>
+                    <div class="mb-3">
+                        <h5>召回模型</h5>
+                        <ul>
+                            <li><strong>ItemBasedCF</strong>: 物品协同过滤</li>
+                            <li><strong>MatrixFactorization</strong>: SVD 矩阵分解</li>
+                            <li><strong>LightFM</strong>: 混合推荐模型</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <h5>排序模型</h5>
+                        <ul>
+                            <li><strong>LightGBM</strong>: 梯度提升树排序</li>
+                            <li>11 维成对特征工程</li>
+                            <li>共现矩阵 + 统计特征</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5>集成策略</h5>
+                        <ul>
+                            <li>召回-排序两阶段架构</li>
+                            <li>多模型融合</li>
+                            <li>动态权重调整</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">
+                        <i class="fas fa-database me-2" style="color: var(--secondary-color);"></i>
+                        数据集信息
+                    </h3>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>数据来源</strong></td>
+                            <td>Book-Crossing Dataset</td>
+                        </tr>
+                        <tr>
+                            <td><strong>图书数量</strong></td>
+                            <td>266,724 本</td>
+                        </tr>
+                        <tr>
+                            <td><strong>用户数量</strong></td>
+                            <td>278,858 人</td>
+                        </tr>
+                        <tr>
+                            <td><strong>评分数量</strong></td>
+                            <td>1,149,780 条</td>
+                        </tr>
+                        <tr>
+                            <td><strong>数据稀疏度</strong></td>
+                            <td>99.85%</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        经过清洗和过滤，去除了稀疏用户和图书，提升了推荐质量
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 性能指标 -->
+    {% if performance %}
+    <div class="mb-5">
+        <h2 class="fw-bold mb-4 text-center">
+            <i class="fas fa-chart-line me-2"></i>
+            模型性能对比
+        </h2>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>模型</th>
+                                <th class="text-center">Hit Rate@10</th>
+                                <th class="text-center">Precision@10</th>
+                                <th class="text-center">F1@10</th>
+                                <th class="text-center">MRR@10</th>
+                                <th class="text-center">NDCG@10</th>
+                                <th class="text-center">Coverage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for model, metrics in performance.items() %}
+                            <tr {% if model == 'TwoStage' %}class="table-success"{% endif %}>
+                                <td>
+                                    <strong>{{ model }}</strong>
+                                    {% if model == 'TwoStage' %}
+                                    <span class="badge bg-success ms-2">最佳</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ metrics.hit_rate }}</td>
+                                <td class="text-center">{{ metrics.precision }}</td>
+                                <td class="text-center">{{ metrics.f1 }}</td>
+                                <td class="text-center">{{ metrics.mrr }}</td>
+                                <td class="text-center">{{ metrics.ndcg }}</td>
+                                <td class="text-center">{{ metrics.coverage }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-success mt-3">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-trophy me-2"></i>关键发现
+                    </h5>
+                    <ul class="mb-0">
+                        <li>TwoStage 系统在所有指标上均表现最佳</li>
+                        <li>相比最佳单模型，Hit Rate 提升 <strong>20.9%</strong></li>
+                        <li>MRR 提升 <strong>45.2%</strong>，NDCG 提升 <strong>31.5%</strong></li>
+                        <li>LightGBM 排序阶段显著提升了推荐质量</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- 技术栈 -->
+    <div class="mb-5">
+        <h2 class="fw-bold mb-4 text-center">
+            <i class="fas fa-code me-2"></i>
+            技术栈
+        </h2>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <i class="fab fa-python fa-3x mb-3" style="color: #3776ab;"></i>
+                        <h5>Python 3.8+</h5>
+                        <p class="text-muted small">核心开发语言</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x mb-3" style="color: var(--primary-color);"></i>
+                        <h5>Scikit-learn</h5>
+                        <p class="text-muted small">机器学习库</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-project-diagram fa-3x mb-3" style="color: var(--secondary-color);"></i>
+                        <h5>LightGBM</h5>
+                        <p class="text-muted small">梯度提升框架</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-flask fa-3x mb-3" style="color: #000;"></i>
+                        <h5>Flask</h5>
+                        <p class="text-muted small">Web 框架</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 开发者信息 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h3 class="card-title mb-4">
+                <i class="fas fa-user-graduate me-2"></i>
+                开发者信息
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>姓名:</strong> zhaohc1997</p>
+                    <p><strong>课程:</strong> CS 5481 - Data Mining and Knowledge Discovery</p>
+                    <p><strong>学期:</strong> 2025 Sem A</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>项目:</strong> Assignment 3 - 推荐系统</p>
+                    <p><strong>完成时间:</strong> 2025-01-24</p>
+                    <p><strong>GitHub:</strong> <a href="#">github.com/zhaohc1997</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
